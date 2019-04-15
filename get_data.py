@@ -103,35 +103,26 @@ def get_regulation_prices():
     df_dd['Datetime'] = datetimes_dd
     df_dd['Region'] = area_codes_dd
     df_dd['Dominating_direction'] = reg_prices_dd
-    print(df_dd.shape)
-    print(df_dd.head(120))
 
     df_ro = pd.DataFrame(columns=['Datetime', 'Region', 'Upregulation_price'])
     df_ro['Datetime'] = datetimes_ro
     df_ro['Region'] = area_codes_ro
     df_ro['Upregulation_price'] = reg_prices_ro
-    print(df_ro.shape)
-    print(df_ro.head(120))
 
 
     df_rn = pd.DataFrame(columns=['Datetime', 'Region', 'Downregulation_price'])
     df_rn['Datetime'] = datetimes_rn
     df_rn['Region'] = area_codes_rn
     df_rn['Downregulation_price'] = reg_prices_rn
-    print(df_rn.shape)
-    print(df_rn.head(120))
 
     new_df = df_rn.merge(df_ro, left_on=['Datetime', 'Region'], right_on=['Datetime', 'Region'])
     new_df = new_df.merge(df_dd, left_on=['Datetime', 'Region'], right_on=['Datetime', 'Region'])
     new_df['Unit'] = 'EUR'
-    print(new_df.shape)
-    print(new_df.head())
     new_df = new_df.set_index('Datetime').sort_index()
     if os.path.exists(regulation_prices_data_path):
         new_df = df.append(new_df)
     new_df = new_df.sort_index()
 
-    print(new_df.head(120))
 
     # Prune if there is a series of unvalid ref times at the end, data not available
     # Only the latest because we want to make the distinction between invalid and unavailable
