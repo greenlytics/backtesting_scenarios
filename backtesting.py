@@ -13,10 +13,12 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
     # Function for simulating the market and output the profit you would have made, as well as the imbalance costs.
 
     # ------ Required data structure --------
-    # The bidding_curve should be a dataframe with one row per hour, and for each point in the bidding curve
+    # The bidding_curve should be a pandas dataframe with one row per hour, and for each point in the bidding curve
     # (sorted in increasing order), one column called bid_price_x for the price and one column called bid_vol_x for the volume.
+    # As of now, this function does not support bidding_curves with variable number of points, this number must be
+    # coherent throughout the whole dataset.
 
-    # The bidding curve as well as the production should be dataframes with pandas Datetime indices.
+    # The bidding curve as well as the production should be pandas dataframes with pandas Datetime indices.
 
 
     # ------ Parameters description ----------
@@ -25,7 +27,7 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
     # The optimal parameter adds to the output the profits you would have made if you had had a perfect production forecast,
     # as well as the ratio between your current profit and this "optimal" profit.
 
-    # The update parameters allows to refresh the data used for the simulations. It will slow down the function response time,
+    # The update parameter allows to refresh the data used for the simulations. It will slow down the function response time,
     # so only use it from time to time when you want to refresh the data.
 
     # ------- Usage example -------------
