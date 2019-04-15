@@ -4,12 +4,19 @@ import json
 import os
 from datetime import datetime, timedelta
 
+desired_width=320
+pd.set_option('display.width', desired_width)
+pd.set_option('display.max_columns',10)
+
 import matplotlib.pyplot as plt
 plt.interactive(False)
 
-data_directory = 'data'
-spot_prices_data_path = data_directory + '/spot_prices.csv'
-regulation_prices_data_path = data_directory + '/regulation_prices.csv'
+with open('paths.json') as f:
+    paths = json.load(f)
+
+data_directory = paths['data_directory']
+spot_prices_data_path = data_directory + '/' + paths['spot_prices_file_name']
+regulation_prices_data_path = data_directory + '/' + paths['regulation_prices_file_name']
 
 with open('credentials.json') as f:
     credentials = json.load(f)
@@ -68,7 +75,7 @@ def spot_price_parse_results(cursor):
         prices = query[5]
 
         for i, price in enumerate(prices):
-            datetime = data_date + timedelta(hours=i)
+            datetime = pd.to_datetime(data_date) + timedelta(hours=i)
             regions.append(region)
             units.append(unit)
             datetimes.append(datetime)
@@ -77,41 +84,77 @@ def spot_price_parse_results(cursor):
     return regions, units, datetimes, spot_prices
 
 def get_regulation_prices():
-    new_df = pd.DataFrame(columns=['Region', 'Unit', 'Datetime','Regulation_code', 'Regulation_price'])
+    new_df = pd.DataFrame(columns=['Region', 'Unit', 'Datetime', 'Upregulation_price', 'Downregulation_price', 'Dominating_direction'])
 
     if os.path.exists(regulation_prices_data_path):
         print("Updating regulation prices.")
         df = pd.read_csv(regulation_prices_data_path, parse_dates=True, index_col=0)
         df_last_date = df.index[-1].strftime('%Y-%m-%d')
-        cursor.execute("select * from regional_regulating where data_date >= '{0}' AND reg_code IN ('RO', 'RN');".format(df_last_date))
+        cursor.execute("select * from regional_regulating where data_date >= '{0}' AND reg_code IN ('RO', 'RN', 'DD');".format(df_last_date))
     else:
         print("Fetching regulation prices.")
-        cursor.execute("select * from regional_regulating where reg_code IN ('RO', 'RN');")
+        cursor.execute("select * from regional_regulating where reg_code IN ('RO', 'RN', 'DD');")
 
-    datetimes, area_codes, reg_codes, reg_prices = reg_price_parse_results(cursor)
-    new_df['Datetime'] = datetimes
-    new_df['Region'] = area_codes
+    datetimes_dd, area_codes_dd, reg_prices_dd, \
+    datetimes_ro, area_codes_ro, reg_prices_ro, \
+    datetimes_rn, area_codes_rn, reg_prices_rn = reg_price_parse_results(cursor)
+
+    df_dd = pd.DataFrame(columns=['Datetime', 'Region', 'Dominating_direction'])
+    df_dd['Datetime'] = datetimes_dd
+    df_dd['Region'] = area_codes_dd
+    df_dd['Dominating_direction'] = reg_prices_dd
+    print(df_dd.shape)
+    print(df_dd.head(120))
+
+    df_ro = pd.DataFrame(columns=['Datetime', 'Region', 'Upregulation_price'])
+    df_ro['Datetime'] = datetimes_ro
+    df_ro['Region'] = area_codes_ro
+    df_ro['Upregulation_price'] = reg_prices_ro
+    print(df_ro.shape)
+    print(df_ro.head(120))
+
+
+    df_rn = pd.DataFrame(columns=['Datetime', 'Region', 'Downregulation_price'])
+    df_rn['Datetime'] = datetimes_rn
+    df_rn['Region'] = area_codes_rn
+    df_rn['Downregulation_price'] = reg_prices_rn
+    print(df_rn.shape)
+    print(df_rn.head(120))
+
+    new_df = df_rn.merge(df_ro, left_on=['Datetime', 'Region'], right_on=['Datetime', 'Region'])
+    new_df = new_df.merge(df_dd, left_on=['Datetime', 'Region'], right_on=['Datetime', 'Region'])
     new_df['Unit'] = 'EUR'
-    new_df['Regulation_code'] = reg_codes
-    new_df['Regulation_price'] = reg_prices
+    print(new_df.shape)
+    print(new_df.head())
     new_df = new_df.set_index('Datetime').sort_index()
     if os.path.exists(regulation_prices_data_path):
         new_df = df.append(new_df)
     new_df = new_df.sort_index()
 
+    print(new_df.head(120))
+
     # Prune if there is a series of unvalid ref times at the end, data not available
     # Only the latest because we want to make the distinction between invalid and unavailable
-    new_df = new_df[:new_df[new_df['Regulation_price'] != -1].index[-1]]
+    new_df = new_df[:new_df[new_df['Upregulation_price'] != -1].index[-1]]
+    new_df = new_df[:new_df[new_df['Downregulation_price'] != -1].index[-1]]
 
     new_df.to_csv(regulation_prices_data_path)
 
     return new_df
 
 def reg_price_parse_results(cursor):
-    reg_codes = []
-    datetimes = []
-    area_codes = []
-    reg_prices = []
+    datetimes_dd = []
+    datetimes_ro = []
+    datetimes_rn = []
+
+    area_codes_dd = []
+    area_codes_ro = []
+    area_codes_rn = []
+
+    reg_prices_dd = []
+    reg_prices_ro = []
+    reg_prices_rn = []
+
     for query in cursor:
         area_code = query[0]
         data_date = query[1]
@@ -121,37 +164,115 @@ def reg_price_parse_results(cursor):
         # reg_type = query[5]
         reg_code = query[6]
 
-        for i, price in enumerate(prices):
-            datetime = data_date + timedelta(hours=i)
-            datetimes.append(datetime)
-            area_codes.append(area_code)
-            reg_codes.append(reg_code)
-            reg_prices.append(price)
+        # If this row only indicates the dominating direction
+        if reg_code == 'DD':
+            for i, price in enumerate(prices):
+                datetime = pd.to_datetime(data_date) + timedelta(hours=i)
+                datetimes_dd.append(datetime)
+                area_codes_dd.append(area_code)
+                reg_prices_dd.append(price)
 
-    return datetimes, area_codes, reg_codes, reg_prices
+        elif reg_code == 'RO':
+            for i, price in enumerate(prices):
+                datetime = pd.to_datetime(data_date) + timedelta(hours=i)
+                datetimes_ro.append(datetime)
+                area_codes_ro.append(area_code)
+                reg_prices_ro.append(price)
+
+        elif reg_code == 'RN':
+            for i, price in enumerate(prices):
+                datetime = pd.to_datetime(data_date) + timedelta(hours=i)
+                datetimes_rn.append(datetime)
+                area_codes_rn.append(area_code)
+                reg_prices_rn.append(price)
+
+    return datetimes_dd, area_codes_dd, reg_prices_dd,\
+           datetimes_ro, area_codes_ro, reg_prices_ro,\
+           datetimes_rn, area_codes_rn, reg_prices_rn
 
 
 
-df = get_spot_prices()
-print(df.shape)
-print(df.head())
-print(df.tail())
-
-print(df[df['Spot_price'] == -1].index)
-
-
-df = get_regulation_prices()
-print(df.shape)
-print(df.head())
-print(df.tail())
-print(df[df['Regulation_price'] == -1])
-
-# def build_df_from_db():
+# df = get_spot_prices()
+# print(df.shape)
+# print(df.head())
+# print(df.tail())
 #
-#     return df
+# print(df[df['Spot_price'] == -1].index)
 #
-# def update_local_data():
-#     new_data = build_df_from_db()
-#     df.append(new_data)
-#     df.save
-#     return
+#
+# df = get_regulation_prices()
+# print(df.shape)
+# print(df.head())
+# print(df.tail())
+# print(df[df['Upregulation_price'] == -1])
+# print(df[df['Downregulation_price'] == -1])
+#
+# spot_prices = get_spot_prices()
+# print(spot_prices.shape)
+# print(spot_prices.head())
+# print(spot_prices.tail())
+# df = df.merge(spot_prices, left_on=['Datetime', 'Region', 'Unit'], right_on=['Datetime', 'Region', 'Unit'])
+# print(df.shape)
+# print(df.head(100))
+# print(df.tail())
+
+#
+# df = get_regulation_prices().merge(get_spot_prices(), left_on=['Datetime', 'Region'], right_on=['Datetime', 'Region'])
+# print(df.shape)
+#
+# print('Code 1')
+# df_dd_1 = df[df['Dominating_direction'] == 1]
+# print(df_dd_1.shape)
+# matching_df_dd_1 = df_dd_1[df_dd_1['Regulation_price'] == df_dd_1['Spot_price']]
+# print(matching_df_dd_1.shape)
+# print('RN')
+# print(matching_df_dd_1[matching_df_dd_1['Regulation_code'] == 'RN'].shape)
+# print('RO')
+# print(matching_df_dd_1[matching_df_dd_1['Regulation_code'] == 'RO'].shape)
+#
+# print('Code 0')
+# df_dd_0 = df[df['Dominating_direction'] == 0]
+# print(df_dd_0.shape)
+# matching_df_dd_0 = df_dd_0[df_dd_0['Regulation_price'] == df_dd_0['Spot_price']]
+# print(matching_df_dd_0.shape)
+# print('Non-matching:')
+# print(df_dd_0[df_dd_0['Regulation_price'] != df_dd_0['Spot_price']])
+# print('RN')
+# print(matching_df_dd_0[matching_df_dd_0['Regulation_code'] == 'RN'].shape)
+# print('RO')
+# print(matching_df_dd_0[matching_df_dd_0['Regulation_code'] == 'RO'].shape)
+#
+# print('Code -1')
+# df_dd_minus_1 = df[df['Dominating_direction'] == -1]
+# # Half of all the cases
+# print(df_dd_minus_1.shape)
+# # Almost half of those cases have matching spot price and regulation price
+# # only few impossible to determine, back to the 2% noticed in the data
+# matching_df_dd_minus_1 = df_dd_minus_1[df_dd_minus_1['Regulation_price'] == df_dd_minus_1['Spot_price']]
+# print(matching_df_dd_minus_1.shape)
+# print('RN')
+# print(matching_df_dd_minus_1[matching_df_dd_minus_1['Regulation_code'] == 'RN'].shape)
+# print('RO')
+# print(matching_df_dd_minus_1[matching_df_dd_minus_1['Regulation_code'] == 'RO'].shape)
+#
+#
+# print('Percentage of matching cases')
+# total = 0
+# matching = 0
+# count_dict = {-1: 0, 0: 0, 1:0}
+# for datetime in list(df.index.unique()):
+#     total += 1
+#     date_df = df.loc[datetime]
+#     bad = 0
+#     for region in ['SE1', 'SE2', 'SE3', 'SE4']:
+#         # If for this datetime one of the regions has no match
+#         regional_date_df = date_df[date_df['Region'] == region]
+#         regional_matching_df = regional_date_df[regional_date_df['Spot_price'] == regional_date_df['Regulation_price']]
+#         if not regional_matching_df.shape[0] > 0:
+#             bad = 1
+#             count_dict[regional_date_df['Dominating_direction'][0]] = count_dict[regional_date_df['Dominating_direction'][0]] + 1
+#     if not bad:
+#         matching += 1
+#
+# print(matching/total)
+# print(count_dict)

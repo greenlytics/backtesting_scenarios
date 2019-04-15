@@ -1,0 +1,5 @@
+{
+  "data_directory": "data",
+  "spot_prices_file_name": "spot_prices.csv",
+  "regulation_prices_file_name": "regulation_prices.csv"
+}
