@@ -7,7 +7,7 @@ Replace the "XXX" in **credentials_example.json** with the
  database credentials you have been provided with.
  
 Install all the required dependencies with **pip** running 
-`pip freeze -r requirements.txt`
+`pip install -r requirements.txt`
 
 You will then have to make sure that your data structure is aligned 
 with the one required by the function. All the details can be found
