@@ -4,7 +4,8 @@ This code provides you with a fully integrated function to test
  
 #### First use
 Replace the "XXX" in **credentials_example.json** with the
- database credentials you have been provided with.
+ database credentials you have been provided with, and then rename
+ the file to **credentials.json**.
  
 Install all the required dependencies with **pip** running 
 `pip install -r requirements.txt`
