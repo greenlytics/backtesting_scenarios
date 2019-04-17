@@ -110,11 +110,11 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
         # If two prices system
 
         # If upregulation as dominating direction
-        data.loc[data['Dominating_direction'] == 1, 'Imbalance_cost'] = data['Spot_price'] * data['E+'] \
+        data.loc[data['Dominating_direction'] == 1, 'Imbalance_cost'] = data['Downregulation_price'] * data['E+'] \
                                                                          + data['Upregulation_price'] * data['E-']
         # If downregulation as dominating direction
         data.loc[data['Dominating_direction'] == -1, 'Imbalance_cost'] = data['Downregulation_price'] * data['E+'] \
-                                                                        + data['Spot_price'] * data['E-']
+                                                                        + data['Upregulation_price'] * data['E-']
         # If unregulation
         data.loc[data['Dominating_direction'] == 0, 'Imbalance_cost'] = data['Spot_price'] * data['E+'] \
                                                                         + data['Spot_price'] * data['E-']
@@ -128,3 +128,6 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
     else:
         return data[['Profit','Imbalance_cost']]
 
+bidding_curve = wrapper_bidding_curve_Ilias('day_1_2017.npz')
+production = wrapper_production_Ilias('day_1_2017.npz')
+result = backtesting_function('SE1', bidding_curve, production, False, False, False)
