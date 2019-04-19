@@ -127,7 +127,3 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
         return data[['Imbalance_cost','Profit','Profit_no_error','Optimization_ratio']]
     else:
         return data[['Profit','Imbalance_cost']]
-
-bidding_curve = wrapper_bidding_curve_Ilias('day_1_2017.npz')
-production = wrapper_production_Ilias('day_1_2017.npz')
-result = backtesting_function('SE1', bidding_curve, production, False, False, False)
