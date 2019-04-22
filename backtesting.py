@@ -76,10 +76,7 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
         bidding_curve_row = bidding_curve.loc[idx]
         bid_price_idx = next(bidding_price_cols.index(col_name) for col_name in bidding_price_cols if row['Spot_price'] < bidding_curve_row[col_name])
         if bid_price_idx == 0:
-            bid_price_volumes.append(bidding_curve_row[bidding_vol_cols[bid_price_idx]] -
-                                     ((bidding_curve_row[bidding_price_cols[bid_price_idx]] - row['Spot_price']) /
-                                      (bidding_curve_row[bidding_price_cols[bid_price_idx]])) *
-                                     (bidding_curve_row[bidding_vol_cols[bid_price_idx]]))
+            bid_price_volumes.append(0)
         else:
             bid_price_volumes.append(bidding_curve_row[bidding_vol_cols[bid_price_idx]] -
                                  ((bidding_curve_row[bidding_price_cols[bid_price_idx]] - row['Spot_price'])/
