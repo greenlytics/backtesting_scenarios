@@ -74,7 +74,12 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
     bid_price_volumes = []
     for idx, row in data.iterrows():
         bidding_curve_row = bidding_curve.loc[idx]
+        # If spot price is above biggest bidding price, assign biggest bidding volume
+        if row['Spot_price'] > bidding_curve_row[bidding_price_cols[-1]]:
+            bid_price_volumes.append(bidding_curve_row[bidding_vol_cols[-1]])
+            continue
         bid_price_idx = next(bidding_price_cols.index(col_name) for col_name in bidding_price_cols if row['Spot_price'] < bidding_curve_row[col_name])
+        # If spot price is below smallest bidding price, assign 0 volume
         if bid_price_idx == 0:
             bid_price_volumes.append(0)
         else:
