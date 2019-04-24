@@ -28,4 +28,6 @@ anytime you want to refresh the data.
 
 ### Profit calculation equations implemented
 
-![System of equations implemented to calculate the profit](https://github.com/greenlytics/backtesting_scenarios/blob/master/Equations.png)
+![](https://github.com/greenlytics/backtesting_scenarios/blob/master/Terminology.png)
+![](https://github.com/greenlytics/backtesting_scenarios/blob/master/one_price_equations.png)
+![](https://github.com/greenlytics/backtesting_scenarios/blob/master/two_prices_equations.png)
