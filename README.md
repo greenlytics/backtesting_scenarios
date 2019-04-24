@@ -25,3 +25,5 @@ as **True** because it will allow you to locally fetch the data needed
 for simulating the market. You should set this parameter to **False**
 if you want to speed up the function return. Set it back to **True** 
 anytime you want to refresh the data.
+
+![System of equations implemented to calculate the profit](http://github.com/greenlytics/backtesting_scenarios/Equations.jpg)
