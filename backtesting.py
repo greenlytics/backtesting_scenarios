@@ -15,10 +15,47 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
     # ------ Required data structure --------
     # The bidding_curve should be a pandas dataframe with one row per hour, and for each point in the bidding curve
     # (sorted in increasing order), one column called bid_price_x for the price and one column called bid_vol_x for the volume.
+    # NB: The bid prices should be strictly monotonically increasing and the bid volumes should be monotonically increasing.
+    # The unit for the volumes (both for bidding curve and production) should be MWh and prices should be €/MWh.
     # As of now, this function does not support bidding_curves with variable number of points, this number must be
     # coherent throughout the whole dataset.
 
     # The bidding curve as well as the production should be pandas dataframes with pandas Datetime indices.
+    # They should have the following content:
+
+    # ---------- Production --------------
+    # ╔══════════════════════╦════════════╗
+    # ║ Datetime             ║ Production ║
+    # ╠══════════════════════╬════════════╣
+    # ║ 2017-01-01 00:00:00  ║ 633.787216 ║
+    # ╠══════════════════════╬════════════╣
+    # ║ 2017-01-01 01:00:00  ║ 588.438997 ║
+    # ╠══════════════════════╬════════════╣
+    # ║ 2017-01-01 02:00:00  ║ 543.984556 ║
+    # ╠══════════════════════╬════════════╣
+    # ║ ...                  ║ ...        ║
+    # ╠══════════════════════╬════════════╣
+    # ║ 2017-01-01 23:00:00  ║ 538.862199 ║
+    # ╠══════════════════════╬════════════╣
+    # ║ 2017-01-02 00:00:00  ║ 537.862199 ║
+    # ╚══════════════════════╩════════════╝
+
+    # ----------- Bidding curve ----------------
+    # ╔══════════════════════╦═════════════╦══════════════╦═════════════╦══════════════╦═════╗
+    # ║ Datetime             ║ bid_price_1 ║ bid_volume_1 ║ bid_price_2 ║ bid_volume_2 ║ ... ║
+    # ╠══════════════════════╬═════════════╬══════════════╬═════════════╬══════════════╬═════╣
+    # ║ 2017-01-01 00:00:00  ║ 19.636959   ║ 647.26274    ║ 24.635657   ║ 724.865927   ║ ... ║
+    # ╠══════════════════════╬═════════════╬══════════════╬═════════════╬══════════════╬═════╣
+    # ║ 2017-01-01 01:00:00  ║ 22.892855   ║ 0.00000      ║ 23.602505   ║ 479.413648   ║ ... ║
+    # ╠══════════════════════╬═════════════╬══════════════╬═════════════╬══════════════╬═════╣
+    # ║ 2017-01-01 02:00:00  ║ 21.944912   ║ 0.00000      ║ 22.753397   ║ 0.00000      ║ ... ║
+    # ╠══════════════════════╬═════════════╬══════════════╬═════════════╬══════════════╬═════╣
+    # ║ ...                  ║ ...         ║ ...          ║ ...         ║ ...          ║ ... ║
+    # ╠══════════════════════╬═════════════╬══════════════╬═════════════╬══════════════╬═════╣
+    # ║ 2017-01-01 23:00:00  ║ 27.575207   ║ 0.00000      ║ 28.761277   ║ 0.00000      ║ ... ║
+    # ╠══════════════════════╬═════════════╬══════════════╬═════════════╬══════════════╬═════╣
+    # ║ 2017-01-02 00:00:00  ║ 28.973810   ║ 501.375889   ║ 29.964015   ║ 540.663559   ║ ... ║
+    # ╚══════════════════════╩═════════════╩══════════════╩═════════════╩══════════════╩═════╝
 
 
     # ------ Parameters description ----------
