@@ -1,0 +1,62 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{mathtools}
+\usepackage{diagbox}
+
+\usepackage[table]{xcolor}
+
+\title{Market imbalance profit equations}
+\author{vinc420 }
+\date{April 2019}
+
+\begin{document}
+
+\maketitle
+
+\section*{One price system}
+
+\begin{math}
+    Profit = \lambda^{D}P^{D} +
+    \begin{dcases}
+    \lambda^{BA,\uparrow}E^{+}+\lambda^{BA,\uparrow}E^{-}, & \mbox{if upregulated} \\ \lambda^{BA,\downarrow}E^{+}+\lambda^{BA,\downarrow}E^{-}, & \mbox{if downregulated} \\ \lambda^{D}E^{+}+\lambda^{D}E^{-}, & \mbox{if unregulated}
+    \end{dcases}
+\end{math}
+\\
+\newline
+
+\begin{tabular}{ |s|c|c|  }
+\hline
+\cellcolor{white}\diagbox{Direction}{Error} &\cellcolor{lightgray} $E^{+}$ & \cellcolor{lightgray} $E^{-}$ \\
+\hline
+\cellcolor{lightgray} Unregulated & \cellcolor[HTML]{4286f4}$\lambda^{D}E^{+}$ & \cellcolor[HTML]{4286f4}$\lambda^{D}E^{-}$ \\
+\cellcolor{lightgray} Upregulated & \cellcolor[HTML]{4e8c17}$\lambda^{BA,\uparrow}E^{+}$ & \cellcolor[HTML]{c42e21}$\lambda^{BA,\uparrow}E^{-}$ \\
+\cellcolor{lightgray} Downregulated & \cellcolor[HTML]{c42e21}$\lambda^{BA,\downarrow}E^{+}$ & \cellcolor[HTML]{4e8c17}$\lambda^{BA,\downarrow}E^{-}$ \\
+\hline
+\end{tabular}
+
+\section*{Two prices system}
+\begin{math}
+    Profit = \lambda^{D}P^{D} +
+    \begin{dcases}
+    \lambda^{BA,\downarrow}E^{+}+\lambda^{BA,\uparrow}E^{-}, & \mbox{if upregulated} \\ \lambda^{BA,\downarrow}E^{+}+\lambda^{BA,\uparrow}E^{-}, & \mbox{if downregulated} \\ \lambda^{D}E^{+}+\lambda^{D}E^{-}, & \mbox{if unregulated}
+    \end{dcases}
+\end{math}
+\\
+\newline
+
+\begin{tabular}{ |s|c|c|  }
+\hline
+\cellcolor{white}\diagbox{Direction}{Error} &\cellcolor{lightgray} $E^{+}$ & \cellcolor{lightgray} $E^{-}$ \\
+\hline
+\cellcolor{lightgray} Unregulated & \cellcolor[HTML]{4286f4}$\lambda^{D}E^{+}$ & \cellcolor[HTML]{4286f4}$\lambda^{D}E^{-}$ \\
+\cellcolor{lightgray} Upregulated & \cellcolor[HTML]{ea8d0b}$\lambda^{BA,\downarrow}E^{+}$ & \cellcolor[HTML]{c42e21}$\lambda^{BA,\uparrow}E^{-}$ \\
+\cellcolor{lightgray} Downregulated & \cellcolor[HTML]{c42e21}$\lambda^{BA,\downarrow}E^{+}$ & \cellcolor[HTML]{ea8d0b}$\lambda^{BA,\uparrow}E^{-}$ \\
+\hline
+\end{tabular}
+
+
+
+
+
+
+\end{document}
