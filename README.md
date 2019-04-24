@@ -3,6 +3,9 @@ This code provides you with a fully integrated function to test
  the performance of your model. 
  
 #### First use
+You need to have postgresql installed on your system.
+You can find the documentation to install it [there](https://wiki.postgresql.org/wiki/Detailed_installation_guides).
+
 Replace the "XXX" in **credentials_example.json** with the
  database credentials you have been provided with, and then rename
  the file to **credentials.json**.
