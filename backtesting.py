@@ -89,6 +89,9 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
     regulation_prices = regulation_prices[first_ref_time:last_ref_time]
     spot_prices = spot_prices[spot_prices['Region'] == region]
     regulation_prices = regulation_prices[regulation_prices['Region'] == region]
+    # Sometimes the most recent ref time will have duplicates for some reason, make sure to drop them
+    regulation_prices = regulation_prices[regulation_prices.index.duplicated(keep='first')]
+    spot_prices = spot_prices[spot_prices.index.duplicated(keep='first')]
     data = spot_prices.merge(regulation_prices, left_on=['Datetime', 'Region', 'Unit'], right_on=['Datetime', 'Region', 'Unit'])
     # Remove invalid values
     data = data[data['Spot_price'] != -1]
