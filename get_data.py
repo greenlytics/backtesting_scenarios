@@ -30,6 +30,9 @@ cursor = connection.cursor()
 if not os.path.exists(data_directory):
     os.makedirs(data_directory)
 
+
+
+
 def get_spot_prices():
     new_df = pd.DataFrame(columns=['Region', 'Unit', 'Datetime', 'Spot_price'])
 
@@ -181,6 +184,34 @@ def reg_price_parse_results(cursor):
            datetimes_ro, area_codes_ro, reg_prices_ro,\
            datetimes_rn, area_codes_rn, reg_prices_rn
 
+def get_range_prices(first_date, last_date, update=False, separate_df=True):
+    # Get prices data for a specific range of dates
+    # Example call: get_range_prices('2019-03-25','2019-03-30', separate_df=False)
+    #
+    # --- Arguments description --
+    # You need to provide first date and last date in the following format: 2019-03-24 01:00:00
+    # You can only provide the date, it will automatically assume 00:00:00 as the time
+    # Set update to True if you want to refresh your data, slows down the response time
+    # Set separate_df to True if you want one dataframe for the spot prices and one for the regulation prices
+    # Set separate_df to False (or don't provide it) if you want all the prices in the same dataframe
+
+    if update:
+        spot = get_spot_prices()
+        reg = get_regulation_prices()
+    else:
+        spot = pd.read_csv(spot_prices_data_path, parse_dates=True, index_col=0)
+        reg = pd.read_csv(regulation_prices_data_path, parse_dates=True, index_col=0)
+
+    spot = spot[pd.to_datetime(first_date):pd.to_datetime(last_date)]
+
+    reg = reg[pd.to_datetime(first_date):pd.to_datetime(last_date)]
+
+    if separate_df:
+        return spot, reg
+    else:
+        cols_to_use = set(reg.columns) - set(spot.columns)
+        spot = spot.merge(reg[list(cols_to_use) + ['Region']], left_on=['Datetime', 'Region'], right_on=['Datetime','Region'])
+        return spot
 
 
 # df = get_spot_prices()
