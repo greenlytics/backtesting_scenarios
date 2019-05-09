@@ -9,7 +9,9 @@ from wrapper_Ilias import wrapper_bidding_curve_Ilias, wrapper_production_Ilias
 with open('paths.json') as f:
     paths = json.load(f)
 
-def backtesting_function(region, bidding_curve, production, one_price=False, optimal=False, update=True):
+def backtesting_function(region, bidding_curve, production, one_price=False, optimal=False, update=True, producer=True):
+    # TODO: doc producer
+    # x = x2 - (y1 - y)/(y1-y2)*(x2-x1)
     # Function for simulating the market and output the profit you would have made, as well as the imbalance costs.
 
     # ------ Required data structure --------
@@ -113,20 +115,37 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
 
     bid_price_volumes = []
     for idx, row in data.iterrows():
-        bidding_curve_row = bidding_curve.loc[idx]
-        # If spot price is above biggest bidding price, assign biggest bidding volume
-        if row['Spot_price'] > bidding_curve_row[bidding_price_cols[-1]]:
-            bid_price_volumes.append(bidding_curve_row[bidding_vol_cols[-1]])
-            continue
-        bid_price_idx = next(bidding_price_cols.index(col_name) for col_name in bidding_price_cols if row['Spot_price'] < bidding_curve_row[col_name])
-        # If spot price is below smallest bidding price, assign 0 volume
-        if bid_price_idx == 0:
-            bid_price_volumes.append(0)
+        if producer:
+            bidding_curve_row = bidding_curve.loc[idx]
+            # If spot price is above biggest bidding price, assign biggest bidding volume
+            if row['Spot_price'] > bidding_curve_row[bidding_price_cols[-1]]:
+                bid_price_volumes.append(bidding_curve_row[bidding_vol_cols[-1]])
+                continue
+            bid_price_idx = next(bidding_price_cols.index(col_name) for col_name in bidding_price_cols if row['Spot_price'] < bidding_curve_row[col_name])
+            # If spot price is below smallest bidding price, assign 0 volume
+            if bid_price_idx == 0:
+                bid_price_volumes.append(0)
+            else:
+                bid_price_volumes.append(bidding_curve_row[bidding_vol_cols[bid_price_idx]] -
+                                     ((bidding_curve_row[bidding_price_cols[bid_price_idx]] - row['Spot_price'])/
+                                    (bidding_curve_row[bidding_price_cols[bid_price_idx]] - bidding_curve_row[bidding_price_cols[bid_price_idx - 1]]))*
+                              (bidding_curve_row[bidding_vol_cols[bid_price_idx]] - bidding_curve_row[bidding_vol_cols[bid_price_idx - 1]]))
         else:
-            bid_price_volumes.append(bidding_curve_row[bidding_vol_cols[bid_price_idx]] -
-                                 ((bidding_curve_row[bidding_price_cols[bid_price_idx]] - row['Spot_price'])/
-                                (bidding_curve_row[bidding_price_cols[bid_price_idx]] - bidding_curve_row[bidding_price_cols[bid_price_idx - 1]]))*
-                          (bidding_curve_row[bidding_vol_cols[bid_price_idx]] - bidding_curve_row[bidding_vol_cols[bid_price_idx - 1]]))
+            bidding_curve_row = bidding_curve.loc[idx]
+            # If spot price is under smallest bidding price, assign biggest bidding volume
+            if row['Spot_price'] < bidding_curve_row[bidding_price_cols[0]]:
+                bid_price_volumes.append(bidding_curve_row[bidding_vol_cols[0]])
+                continue
+            bid_price_idx = next((bidding_price_cols.index(col_name) for col_name in bidding_price_cols if
+                                 row['Spot_price'] < bidding_curve_row[col_name]), -1)
+            # If spot price is above biggest bidding price, assign 0 volume
+            if bid_price_idx == -1:
+                bid_price_volumes.append(0)
+            else:
+                bid_price_volumes.append(bidding_curve_row[bidding_vol_cols[bid_price_idx]] -
+                                         ((bidding_curve_row[bidding_price_cols[bid_price_idx - 1]] - row['Spot_price']) /
+                                          (bidding_curve_row[bidding_price_cols[bid_price_idx - 1]] - bidding_curve_row[bidding_price_cols[bid_price_idx]])) *
+                                         (bidding_curve_row[bidding_vol_cols[bid_price_idx]] - bidding_curve_row[bidding_vol_cols[bid_price_idx - 1]]))
 
     data['Volume'] = bid_price_volumes
     print(production)
