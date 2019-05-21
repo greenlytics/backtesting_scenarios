@@ -77,8 +77,6 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
     # production = wrapper_production_Ilias('day_1_2017.npz')
     # result = backtesting_function('SE1', bidding_curve, production, False, False, False, False)
 
-    first_ref_time = bidding_curve.index[0]
-    last_ref_time = bidding_curve.index[-1]
     if update:
         spot_prices = get_spot_prices()
         regulation_prices = get_regulation_prices()
@@ -90,8 +88,9 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
 
     spot_prices.index.name = 'Datetime'
     regulation_prices.index.name = 'Datetime'
-    spot_prices = spot_prices[first_ref_time:last_ref_time]
-    regulation_prices = regulation_prices[first_ref_time:last_ref_time]
+    # Filter out the data about the times which are not present in the bidding curve
+    spot_prices = spot_prices[spot_prices.index.isin(bidding_curve.index)]
+    regulation_prices = regulation_prices[regulation_prices.index.isin(bidding_curve.index)]
     spot_prices = spot_prices[spot_prices['Region'] == region]
     regulation_prices = regulation_prices[regulation_prices['Region'] == region]
     # Sometimes the most recent ref time will have duplicates for some reason, make sure to drop them
