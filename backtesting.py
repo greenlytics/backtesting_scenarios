@@ -10,8 +10,6 @@ with open('paths.json') as f:
     paths = json.load(f)
 
 def backtesting_function(region, bidding_curve, production, one_price=False, optimal=False, update=True, producer=True):
-    # TODO: doc producer
-    # x = x2 - (y1 - y)/(y1-y2)*(x2-x1)
     # Function for simulating the market and output the profit you would have made, as well as the imbalance costs.
 
     # ------ Required data structure --------
@@ -69,10 +67,13 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
     # The update parameter allows to refresh the data used for the simulations. It will slow down the function response time,
     # so only use it from time to time when you want to refresh the data.
 
+    # The production parameter allows you to specify if you want the calculations to be made on the producer side
+    # or on the retailer side.
+
     # ------- Usage example -------------
     # bidding_curve = wrapper_bidding_curve_Ilias('day_1_2017.npz')
     # production = wrapper_production_Ilias('day_1_2017.npz')
-    # result = backtesting_function('SE1', bidding_curve, production, False, False, False)
+    # result = backtesting_function('SE1', bidding_curve, production, False, False, False, False)
 
     first_ref_time = bidding_curve.index[0]
     last_ref_time = bidding_curve.index[-1]
@@ -104,18 +105,20 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
     bidding_price_cols = [col_name for col_name in bidding_curve.columns if 'price' in col_name]
     bidding_vol_cols = [col_name for col_name in bidding_curve.columns if 'volume' in col_name]
 
-    # If x is the volume we are trying to determine, x1 the bid volume directly smaller, x2 directly larger,
-    # y being the spot price, y1 the bid price directly smaller and y2 directly larger,
-    # then x = x2 - (y2 - y)/(y2-y1)*(x2-x1)
-    # Here, we are trying to find the column containing y2, and then finding all the other values from their relative
-    # position to y2 in the dataframe.
-    # The prices/volumes are supposed to be sorted in the increasing order,
-    # the bid price/volume columns supposed to be directly next one to another for a specific one,
-    # and the first column is supposed to be the first bid price (followed by the first bid volume etc).
 
     bid_price_volumes = []
     for idx, row in data.iterrows():
         if producer:
+
+            # If x is the volume we are trying to determine, x1 the bid volume directly smaller, x2 directly larger,
+            # y being the spot price, y1 the bid price directly smaller and y2 directly larger,
+            # then x = x2 - (y2 - y)/(y2-y1)*(x2-x1)
+            # Here, we are trying to find the column containing y2, and then finding all the other values from their relative
+            # position to y2 in the dataframe.
+            # The prices/volumes are supposed to be sorted in the increasing order,
+            # the bid price/volume columns supposed to be directly next one to another for a specific one,
+            # and the first column is supposed to be the first bid price (followed by the first bid volume etc).
+
             bidding_curve_row = bidding_curve.loc[idx]
             # If spot price is above biggest bidding price, assign biggest bidding volume
             if row['Spot_price'] > bidding_curve_row[bidding_price_cols[-1]]:
@@ -131,6 +134,17 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
                                     (bidding_curve_row[bidding_price_cols[bid_price_idx]] - bidding_curve_row[bidding_price_cols[bid_price_idx - 1]]))*
                               (bidding_curve_row[bidding_vol_cols[bid_price_idx]] - bidding_curve_row[bidding_vol_cols[bid_price_idx - 1]]))
         else:
+
+            # If x is the volume we are trying to determine, x1 the bid volume directly smaller, x2 directly larger,
+            # y being the spot price, y1 the bid price directly smaller and y2 directly larger,
+            # then x = x2 - (y1 - y)/(y1-y2)*(x2-x1) (NB: different than producer due to the trend of the curve)
+            # Here, we are trying to find the column containing y2, and then finding all the other values from their relative
+            # position to y2 in the dataframe.
+            # The prices/volumes are supposed to be sorted in the increasing order,
+            # the bid price/volume columns supposed to be directly next one to another for a specific one,
+            # and the first column is supposed to be the first bid price (followed by the first bid volume etc).
+            #
+
             bidding_curve_row = bidding_curve.loc[idx]
             # If spot price is under smallest bidding price, assign biggest bidding volume
             if row['Spot_price'] < bidding_curve_row[bidding_price_cols[0]]:
