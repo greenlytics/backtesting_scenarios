@@ -1,3 +1,4 @@
+import os
 import json
 import pandas as pd
 import numpy as np
@@ -6,7 +7,8 @@ import matplotlib.pyplot as plt
 from get_data import get_spot_prices, get_regulation_prices
 from wrapper_Ilias import wrapper_bidding_curve_Ilias, wrapper_production_Ilias
 
-with open('paths.json') as f:
+file_dir = os.path.dirname(os.path.realpath(__file__))
+with open(file_dir + '/paths.json') as f:
     paths = json.load(f)
 
 def backtesting_function(region, bidding_curve, production, one_price=False, optimal=False, update=True, producer=True):

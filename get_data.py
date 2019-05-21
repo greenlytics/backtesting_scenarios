@@ -11,14 +11,15 @@ pd.set_option('display.max_columns',10)
 import matplotlib.pyplot as plt
 plt.interactive(False)
 
-with open('paths.json') as f:
+file_dir = os.path.dirname(os.path.realpath(__file__))
+with open(file_dir + '/paths.json') as f:
     paths = json.load(f)
 
 data_directory = paths['data_directory']
 spot_prices_data_path = data_directory + '/' + paths['spot_prices_file_name']
 regulation_prices_data_path = data_directory + '/' + paths['regulation_prices_file_name']
 
-with open('credentials.json') as f:
+with open(file_dir + '/credentials.json') as f:
     credentials = json.load(f)
 
 connection = psycopg2.connect(host='34.76.166.203',
