@@ -1,15 +1,43 @@
-def cet_to_utc(df, col_name, index=False):
-    # Convert pandas dataframe CET/CEST datetimes column to UTC datetimes
-    # Example call: cet_to_utc(dataframe, 'Datetime', index=True)
+import pandas as pd
+def cet_to_utc(df, col_name):
+    # Convert dataframe CET/CEST datetimes column to UTC datetimes
+    # Example call: cet_to_utc(dataframe, 'Datetime')
     #
     # --- Arguments description --
     # You need to provide as first argument the dataframe you want to modify,
     # and as second argument the column you want to modify.
-    # If you want to modify the index, call the function the same way, with the
-    # name of the index column, and set index=True.
-    if index:
-        df = df.reset_index()
-    df[col_name] = df[col_name].dt.tz_localize('Europe/Brussels').dt.tz_convert('UTC')
-    if index:
-        df = df.set_index(col_name)
+    idx_name = df.index.name
+    df = df.reset_index()
+    idx = 0
+    while idx != df.index[-1] + 1:
+        try:
+            df.loc[idx, 'temp'] = pd.to_datetime(df.loc[idx, col_name]).tz_localize('CET').tz_convert('UTC')
+            idx += 1
+        except:
+
+            # AmbiguousTimeError
+            if df.loc[idx, col_name].month == 10:
+                # Duplicate the single value we had at 2 am
+                df = df.iloc[:idx, ].append(df.iloc[idx]).append(df.iloc[idx:, ]).reset_index(drop=True)
+                # Convert both rows to UTC
+                df.loc[idx, 'temp'] = pd.to_datetime(
+                    pd.to_datetime(df.loc[idx, col_name]) - pd.Timedelta(hours=2)).tz_localize('UTC')
+                df.loc[idx + 1, 'temp'] = pd.to_datetime(
+                    pd.to_datetime(df.loc[idx, col_name]) - pd.Timedelta(hours=1)).tz_localize('UTC')
+                idx += 2
+
+            # InconsistentTimeError
+            else:
+                # Delete the 3 am row
+                df.drop(idx, inplace=True)
+                df = df.sort_index().reset_index(drop=True)
+
+    df[col_name] = df['temp']
+    df = df.drop(labels='temp', axis=1)
+    if idx_name:
+        df = df.set_index(idx_name)
+        df.index.name = idx_name
+    else:
+        df = df.set_index('index')
+        df.index.name = None
     return df
