@@ -6,12 +6,21 @@ from datetime import timedelta
 import matplotlib.pyplot as plt
 from get_data import get_spot_prices, get_regulation_prices
 from wrapper_Ilias import wrapper_bidding_curve_Ilias, wrapper_production_Ilias
+from utils import cet_to_utc
 
 file_dir = os.path.dirname(os.path.realpath(__file__))
 with open(file_dir + '/paths.json') as f:
     paths = json.load(f)
 
-def backtesting_function(region, bidding_curve, production, one_price=False, optimal=False, update=True, producer=True):
+def backtesting_function(region,
+                         bidding_curve,
+                         production,
+                         one_price=False,
+                         optimal=False,
+                         update=True,
+                         producer=True,
+                         convert_to_utc=False,
+                         verbose=False):
     # Function for simulating the market and output the profit you would have made, as well as the imbalance costs.
 
     # ------ Required data structure --------
@@ -86,8 +95,12 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
         regulation_prices = pd.read_csv(paths['data_directory'] + '/' + paths['regulation_prices_file_name'],
                                         parse_dates=True, index_col=0)
 
+
     spot_prices.index.name = 'Datetime'
     regulation_prices.index.name = 'Datetime'
+    if convert_to_utc:
+        spot_prices = cet_to_utc(spot_prices, 'Datetime')
+        regulation_prices = cet_to_utc(regulation_prices, 'Datetime')
     # Filter out the data about the times which are not present in the bidding curve
     spot_prices = spot_prices[spot_prices.index.isin(bidding_curve.index)]
     regulation_prices = regulation_prices[regulation_prices.index.isin(bidding_curve.index)]
@@ -163,9 +176,11 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
                                          (bidding_curve_row[bidding_vol_cols[bid_price_idx]] - bidding_curve_row[bidding_vol_cols[bid_price_idx - 1]]))
 
     data['Volume'] = bid_price_volumes
-    print(production.head())
+    if verbose:
+        print(production.head())
     data = data.merge(production, left_index=True, right_index=True)
-    print(data.head())
+    if verbose:
+        print(data.head())
 
     # Calculate positive and negative errors
     data['E+'] = np.maximum(data['Production'] - data['Volume'], 0)
@@ -196,7 +211,8 @@ def backtesting_function(region, bidding_curve, production, one_price=False, opt
                                                                         + data['Spot_price'] * data['E-']
 
     data['Profit'] = data['Spot_price'] * data['Volume'] + data['Imbalance_cost']
-    print(data[['Spot_price','Downregulation_price','Upregulation_price','Dominating_direction','Production','E+','E-','Imbalance_cost']])
+    if verbose:
+        print(data[['Spot_price','Downregulation_price','Upregulation_price','Dominating_direction','Production','E+','E-','Imbalance_cost']])
     if optimal:
         data['Profit_no_error'] = data['Production'] * data['Spot_price']
         data['Optimization_ratio'] = data['Profit']/data['Profit_no_error']
